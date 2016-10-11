@@ -15,6 +15,7 @@ tegevusAktsias = dataimport.getColumnContent(6)
 
 uniqueAktsiaNimi = list(set(aktsiaNimi))
 
+
 # -------------- INTERFACES
 
 def getBuysInStockQuarter(stock, year, quarter):
@@ -35,6 +36,12 @@ def getStockQuarterLSV(stock, year, quarter):
     print "Year: " , year
     print "Quarter: ", quarter
     return investorGroupStockQuarterLSV(getBuysInStockQuarter(stock, year, quarter), getSalesInStockQuarter(stock, year, quarter), getBuysInQuarter(year, quarter), getSalesInQuarter(year, quarter))
+
+def getYearArrayFromYearQuarterArray(yearQuarterArray):
+    return yearFromYearQuarterArray(yearQuarterArray)
+
+def getQuarterArrayFromYearQuarterArray(yearQuarterArray):
+    return quarterFromYearQuarterArray(yearQuarterArray)
 
 
 # -------------- FUNCTIONS
@@ -77,6 +84,7 @@ def countBuysAndSalesInStock(year, quarter):
 # Get the LSV measure for the investor group
 #       in a given quarter for the given stock
 #       (assumes that some data exists for each quarter in the available years)
+#       (otherwise activePropQ takes activeQ=0 to denominator and result is error)
 def investorGroupStockQuarterLSV(buyersQS, sellersQS, buyersQ, sellersQ):
     
     # Define variables
@@ -85,8 +93,8 @@ def investorGroupStockQuarterLSV(buyersQS, sellersQS, buyersQ, sellersQ):
     activePropQ = buyersQ/activeQ
 
     # Calculate initial LSVI
-    print "STOCK This quarter active: ", activeQS, ", and buyers: ", buyersQS
-    print "ALL This quarter active: ", activeQ, ", and buyers: ", buyersQ, ", and proportion: ", activePropQ
+    print "STOCK - This quarter active: ", activeQS, ", and buyers: ", buyersQS
+    print "ALL - This quarter active: ", activeQ, ", and buyers: ", buyersQ, ", and proportion: ", activePropQ
     indicatorLSVI = abs((buyersQS/activeQS)-activePropQ)
 
     # Create variable to calculate binomial distribution
@@ -98,12 +106,9 @@ def investorGroupStockQuarterLSV(buyersQS, sellersQS, buyersQ, sellersQ):
     # Adjust variables to calculate binomial distribution
     adjBuyersQS = (buyersQS/divisor)
     adjActiveQS = (activeQS/divisor)
-    print "STOCK adjBuyersQS: ", adjBuyersQS, ", and adjActiveQS: ", adjActiveQS, ", and divisor: ", divisor
+    print "ADJUSTED STOCK - adjBuyersQS: ", adjBuyersQS, ", and adjActiveQS: ", adjActiveQS, ", and divisor: ", divisor
     
     # Calculate adjusted LSVI (same as previous LSVI on adj data)
-    #print adjBuyersQS
-    #print adjActiveQS
-    #print activePropQ
     adjustedLSVI = abs((adjBuyersQS/adjActiveQS)-activePropQ)
     print "adjustedLSVI: ", adjustedLSVI
 
@@ -124,61 +129,63 @@ def investorGroupStockQuarterLSV(buyersQS, sellersQS, buyersQ, sellersQ):
     print "indicatorLSV: ", indicatorLSV
     return indicatorLSV
 
-# columns - stocksArray (here )  aktsiaNimi
-# rows - quartersArray (here ) tehinguAasta, tehinguKvartal
-# data content - LSV for the given stock in the given quarter, indicatorLSVqs should be a
-
-def createStockArrayLSV(indicatorLSVqs, stocksArray, quartersArray):
-    return [indicatorLSVqs[columnItem] for columnItem in range(0,len(stocksArray))]        
-
-def createMatrix(uniqueStocksArray, yearsQuartersArray):
-    a = []
-    for x in range(0,len(uniqueStocksArray)):
+# Year values array from array of "YYYY-Q" type
+def yearFromYearQuarterArray(yearQuarterArray):
+    yearArray = []
+    
+    for i in range(0,len(yearQuarterArray)):
         
-        row = []
-        for y in range(0,len(yearsQuartersArray)):
-            currentYear = getYearFromYearQuarterArray(yearsQuartersArray)[y]
-            currentQuarter = getQuarterFromYearQuarterArray(yearsQuartersArray)[y]
-            #print "......"
-            #print currentYear, " ", currentQuarter
-            #print uniqueStocksArray[x]
-            #print getStockQuarterLSV(uniqueStocksArray[x],currentYear,currentQuarter)
-            #print "------"
-            row.append(getStockQuarterLSV(uniqueStocksArray[x],currentYear,currentQuarter))
-        a.append(row)
-    return a
-    #return [[getStockQuarterLSV(stocksArray[rowItem],yearsArray[columnItem],quartersArray[columnItem]) for columnItem in range(0,len(quartersArray))] for rowItem in range(0,2)]
+        yearArray.append(yearQuarterArray[i][0:4])
+        
+    return yearArray
+
+# Quarter values array from array of "YYYY-Q" type
+def quarterFromYearQuarterArray(yearQuarterArray):
+    quarterArray = []
+    
+    for i in range(0,len(yearQuarterArray)):
+        
+        quarterArray.append(yearQuarterArray[i][5:6])
+
+    return quarterArray
 
 # Create a string array from year array with quarters
 def createYearQuarterArray(yearArray):
     yearsLen = int(len(list(set(yearArray))))
     firstYear = int(yearArray[0])
     years = []
+    
     for i in range(firstYear,(firstYear+yearsLen)):
+        
         years.append(str(i)+"-"+str(1))
         years.append(str(i)+"-"+str(2))
         years.append(str(i)+"-"+str(3))
         years.append(str(i)+"-"+str(4))
+        
     return years
 
-def getYearFromYearQuarterArray(yearQuarterArray):
-    yearArray = []
-    for i in range(0,len(yearQuarterArray)):
-        yearArray.append(yearQuarterArray[i][0:4])
-    return yearArray
+# Create matrix type variable (results in LSV indicators for each stock quarter)
+def createMatrix(uniqueStocksArray, yearsQuartersArray):
+    a = []
+    
+    for x in range(0,len(uniqueStocksArray)):
+        row = []
+        for y in range(0,len(yearsQuartersArray)):
+            
+            currentYear = getYearArrayFromYearQuarterArray(yearsQuartersArray)[y]
+            currentQuarter = getQuarterArrayFromYearQuarterArray(yearsQuartersArray)[y]
+            row.append(getStockQuarterLSV(uniqueStocksArray[x],currentYear,currentQuarter))
+            
+        a.append(row)
+        
+    return a
 
-def getQuarterFromYearQuarterArray(yearQuarterArray):
-    quarterArray = []
-    for i in range(0,len(yearQuarterArray)):
-        quarterArray.append(yearQuarterArray[i][5:6])
-    return quarterArray
-#print getStockQuarterLSV('OEG1T',2001,3)
-#print createMatrix(aktsiaNimi,tehinguAasta,tehinguKvartal)
 
+# -------------- IMPLEMENTATION
 
 aastaKvartal = createYearQuarterArray(tehinguAasta)
 matrixLSV = createMatrix(uniqueAktsiaNimi, aastaKvartal)
-#print getYearFromYearQuarterArray(aastaKvartal)[1]
+
 print matrixLSV
 
 
