@@ -63,3 +63,12 @@ def investorGroupStockQuarterLSV(buyersQS, sellersQS, buyersQ, sellersQ):
     indicatorLSV = adjustedLSVI - adjFactor
 
     return indicatorLSV
+
+# rows - stocks (here 3)
+# columns - quarters (here 4)
+# data content - LSV for the given stock in the given quarter, indicatorLSVqs should be a 
+def createMatrix(indicatorLSVqs, noOfRows, noOfColumns):
+    return [[indicatorLSVqs[columnItem] for columnItem in range(noOfColumns)] for rowItem in range(noOfRows)]
+
+# investorGroupStockQuarterLSV(tegevusAktsias.count('1'), tegevusAktsias.count('-1'), 204, 54)
+print createMatrix(5,3,4)
